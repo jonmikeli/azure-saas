@@ -1,9 +1,12 @@
 ﻿
+using System.Net.Http.Headers;
+
 using Microsoft.Extensions.Logging;
-using Microsoft.Graph;
+using Microsoft.Kiota.Abstractions;
+using Microsoft.Kiota.Abstractions.Authentication;
+
 using Saas.Shared.Interface;
 using Saas.Shared.Options;
-using System.Net.Http.Headers;
 
 namespace Saas.Identity.Provider;
 public class SaasGraphClientCredentialsProvider<TOptions> : IAuthenticationProvider
@@ -32,6 +35,20 @@ public class SaasGraphClientCredentialsProvider<TOptions> : IAuthenticationProvi
         {
             requestMessage.Headers.Authorization =
                     new AuthenticationHeaderValue("bearer", await _authProvider.GetAccessTokenAsync());
+        }
+        catch (Exception ex)
+        {
+            _logError(_logger, ex);
+            throw;
+        }
+    }
+
+    public async Task AuthenticateRequestAsync(RequestInformation request, Dictionary<string, object>? additionalAuthenticationContext = null, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            //Add authenticator bearer to the header
+            request.Headers.Add("Authorization", $"Bearer {await _authProvider.GetAccessTokenAsync()}");
         }
         catch (Exception ex)
         {
